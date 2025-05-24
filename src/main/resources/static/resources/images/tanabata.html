@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ふれあい七夕まつり インタラクティブ案内</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices:
+        - Report Info: Event Name, Date/Time, Location -> Goal: Convey basic info at a glance -> Viz/Presentation: Prominently displayed in Hero section -> Interaction: None -> Justification: Most critical info, needs to be highly visible -> Library/Method: HTML/Tailwind
+        - Report Info: Tanabata ornament making, Tanzaku wishes, Bamboo decoration, Special Event -> Goal: Showcase the appeal of each activity -> Viz/Presentation: Icon-embellished cards in a grid or row -> Interaction: Hover to reveal more details or slight zoom effect on cards -> Justification: Visually engaging and piques interest -> Library/Method: HTML/Tailwind/JS (for hover effects if complex)
+        - Report Info: Nothing to bring, drinks provided -> Goal: Lower barrier to participation -> Viz/Presentation: Clear text with icons -> Interaction: None -> Justification: Provides reassurance -> Library/Method: HTML/Tailwind
+        - Report Info: Request to Parents (for help) -> Goal: Encourage cooperation -> Viz/Presentation: Dedicated section with a polite explanation -> Interaction: None -> Justification: Important matter, deserves its own space -> Library/Method: HTML/Tailwind
+        - Report Info: Submission of attendance slip -> Goal: Prompt sign-up -> Viz/Presentation: Clearly state deadline and method. Maybe a visual mock-up of the slip (HTML/CSS). -> Interaction: None (actual online submission is out of scope) -> Justification: Provides a clear call to action -> Library/Method: HTML/Tailwind
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f0f4f8; /* Light grayish blue background */
+        }
+        .font-mochiy {
+            font-family: 'Mochiy Pop One', sans-serif;
+        }
+        .hero-bg {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); /* Deep Indigo to Red to Gold gradient */
+            background-size: 200% 200%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+        .section-title {
+            font-family: 'Mochiy Pop One', sans-serif;
+            color: #1e3a8a; /* Dark Blue */
+        }
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        .btn-primary {
+            background-color: #f59e0b; /* Amber */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #d97706; /* Darker Amber */
+        }
+        .tab-content { display: none; }
+        .tab-active { display: block; }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+        }
+        .nav-link-active {
+            color: #f59e0b; /* Amber */
+            border-bottom: 2px solid #f59e0b;
+        }
+        .star {
+            position: absolute;
+            font-size: 1.5rem;
+            color: gold;
+            opacity: 0;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        .bamboo-leaf {
+            position: absolute;
+            font-size: 2rem;
+            color: #10b981; /* Emerald */
+            opacity: 0.7;
+        }
+        .tanzaku {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            padding: 10px 5px;
+            border-radius: 3px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header id="header" class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#hero" class="font-mochiy text-2xl text-indigo-700">🎋七夕まつり</a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#hero" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-amber-500 border-b-2 border-transparent">ホーム</a>
+                        <a href="#details" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-amber-500 border-b-2 border-transparent">イベント内容</a>
+                        <a href="#info" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-amber-500 border-b-2 border-transparent">参加案内</a>
+                        <a href="#request" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-amber-500 border-b-2 border-transparent">保護者の方へ</a>
+                        <a href="#signup" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-amber-500 border-b-2 border-transparent">お申込み</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500">
+                        <span class="sr-only">メインメニューを開く</span>
+                        <svg id="menu-icon-open" class="h-6 w-6 block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                        <svg id="menu-icon-close" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#hero" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-500 hover:bg-gray-50 border-b-2 border-transparent">ホーム</a>
+                <a href="#details" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-500 hover:bg-gray-50 border-b-2 border-transparent">イベント内容</a>
+                <a href="#info" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-500 hover:bg-gray-50 border-b-2 border-transparent">参加案内</a>
+                <a href="#request" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-500 hover:bg-gray-50 border-b-2 border-transparent">保護者の方へ</a>
+                <a href="#signup" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-500 hover:bg-gray-50 border-b-2 border-transparent">お申込み</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="hero" class="hero-bg text-white relative overflow-hidden">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 text-center relative z-10">
+            <h1 class="font-mochiy text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6">
+                🎋みんなで願いを叶えよう！<br class="md:hidden">ふれあい七夕まつり✨
+            </h1>
+            <p class="text-lg sm:text-xl md:text-2xl mb-4">
+                日本の素敵な伝統行事を、家族みんなで楽しもう！<br>
+                七夕飾りを作って、短冊に願い事を書けば、きっと織姫さまと彦星さまに届くはず☆彡
+            </p>
+            <p class="text-2xl sm:text-3xl font-bold mb-8">
+                令和7年6月29日(日) 13:00～16:00<br>
+                大山小学校 体育館にて開催！ (雨天決行)
+            </p>
+            <a href="#details" class="btn-primary font-bold py-3 px-8 rounded-full text-lg inline-block hover:shadow-lg transform hover:scale-105">
+                もっと詳しく見る 👇
+            </a>
+        </div>
+        <div id="stars-container" class="absolute inset-0 z-0"></div>
+    </section>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section id="details" class="py-12">
+            <h2 class="section-title text-3xl sm:text-4xl text-center mb-12">🌟 イベントの魅力 🌟</h2>
+            <p class="text-center text-lg text-gray-700 mb-12 max-w-2xl mx-auto">
+                「ふれあい七夕まつり」では、子どもたちが日本の伝統文化に触れ、創造性を育む楽しいアクティビティをたくさん用意しています。家族やお友達と一緒に、思い出に残る時間を過ごしましょう！
+            </p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="card p-6 text-center">
+                    <div class="text-5xl mb-4">🎨</div>
+                    <h3 class="font-mochiy text-xl text-blue-600 mb-2">七夕飾りづくり</h3>
+                    <p class="text-gray-600 text-sm">カラフルな折り紙や材料を使って、自分だけのオリジナル七夕飾りを作ろう！創造力を発揮して、素敵な作品を完成させてね。</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <div class="text-5xl mb-4">🌠</div>
+                    <h3 class="font-mochiy text-xl text-pink-500 mb-2">短冊に願い事</h3>
+                    <p class="text-gray-600 text-sm">みんなの夢や願い事を短冊に書いてみよう。心を込めて書いた願いは、きっと星に届くはず！</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <div class="text-5xl mb-4">🎋</div>
+                    <h3 class="font-mochiy text-xl text-green-500 mb-2">大きな竹に飾りつけ</h3>
+                    <p class="text-gray-600 text-sm">作った飾りや願い事を書いた短冊を、大きな笹竹に飾りつけよう！みんなの作品で竹をキラキラに彩ろう。</p>
+                </div>
+                <div id="special-event-card" class="card p-6 text-center relative overflow-hidden cursor-pointer">
+                    <div class="text-5xl mb-4">🎉</div>
+                    <h3 class="font-mochiy text-xl text-amber-500 mb-2">お楽しみの催し物</h3>
+                    <p id="special-event-text" class="text-gray-600 text-sm">何があるかは当日までのお楽しみ！ワクワクドキドキの特別な時間をみんなで体験しよう！<br>(クリックしてね！)</p>
+                    <div id="special-event-reveal" class="absolute inset-0 bg-amber-400/90 flex items-center justify-center text-white p-4 text-lg font-bold opacity-0 transition-opacity duration-300">
+                        当日をお楽しみに！<br>きっと笑顔になれるはず😊
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="info" class="py-12 bg-sky-50 rounded-xl">
+            <h2 class="section-title text-3xl sm:text-4xl text-center mb-10">🎈 参加案内 🎈</h2>
+            <div class="max-w-3xl mx-auto grid md:grid-cols-2 gap-8 text-lg">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="font-mochiy text-xl text-teal-600 mb-3">🗓️ 日時・場所</h3>
+                    <p><strong>日時:</strong> 令和7年6月29日(日) 13:00～16:00</p>
+                    <p class="text-sm text-gray-500">※雨天決行です！</p>
+                    <p><strong>場所:</strong> 大山小学校 体育館</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="font-mochiy text-xl text-orange-600 mb-3">🎒 持ち物</h3>
+                    <p class="font-bold text-xl">とくになし！手ぶらでOK！</p>
+                    <p class="text-sm text-gray-600 mt-2">七夕飾りを作るための道具（ハサミ、のりなど）や材料（折り紙など）は、すべてこちらで準備します。</p>
+                    <p class="text-sm text-gray-600 mt-1">冷たいお茶もご用意していますので、ご安心ください。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="request" class="py-16">
+            <h2 class="section-title text-3xl sm:text-4xl text-center mb-10">🤝 保護者の皆様へのお願い 🤝</h2>
+            <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+                <p class="text-lg text-gray-700 mb-4">
+                    いつも子ども会活動にご理解とご協力をいただき、誠にありがとうございます。
+                </p>
+                <p class="text-gray-700 mb-4">
+                    当日は、子どもたちが安全に、そして楽しく七夕飾り作りに集中できるよう、いくつかのチームに分かれて活動します。つきましては、飾り作りのサポート（作り方の簡単なレクチャーや、ハサミを使う際の安全管理など）をお手伝いいただける保護者の方を募集しております。
+                </p>
+                <p class="text-gray-700 mb-6">
+                    専門的な知識や技術は一切不要です。子どもたちのそばで見守っていただいたり、一緒に楽しんでいただけたりするだけで大変助かります。
+                </p>
+                <p class="text-gray-700 font-semibold">
+                    ご無理のない範囲で結構ですので、ご協力いただけますと幸いです。子どもたちの最高の笑顔のために、どうぞよろしくお願いいたします！
+                </p>
+            </div>
+        </section>
+
+        <section id="signup" class="py-12 bg-gradient-to-r from-yellow-300 via-amber-300 to-orange-300 rounded-xl">
+            <h2 class="section-title text-3xl sm:text-4xl text-center mb-10 text-orange-800">📝 お申込みはこちら 📝</h2>
+            <div class="max-w-2xl mx-auto text-center bg-white/80 p-8 rounded-lg shadow-xl">
+                <p class="text-lg text-gray-700 mb-4">
+                    七夕まつりに参加をご希望の方は、下記の【出席票】にご記入の上、
+                    <strong class="text-red-600">令和7年6月10日(火)まで</strong>に、お子様の担任の先生へご提出ください。
+                </p>
+                <div class="mt-6 border-2 border-dashed border-orange-500 p-6 rounded-lg bg-orange-50">
+                    <h3 class="font-mochiy text-2xl text-orange-700 mb-4">【七夕まつり出席票】</h3>
+                    <div class="text-left space-y-3 text-gray-700">
+                        <p>■ 在校児童のお名前 (※複数人いる場合は全員分ご記入ください)</p>
+                        <div class="space-y-1">
+                            <p>1. ____________________________</p>
+                            <p>2. ____________________________</p>
+                            <p>3. ____________________________</p>
+                            <p>4. ____________________________</p>
+                        </div>
+                        <p>■ (同席者) 大人 ________ 名</p>
+                        <p>■ (同席者) 未就学児 ________ 名</p>
+                    </div>
+                    <p class="mt-6 text-sm text-orange-600">
+                        ※この出席票を印刷するか、同様の内容を紙にご記入の上、提出してください。
+                    </p>
+                </div>
+                <button onclick="printAttendanceSlip()" class="mt-8 btn-primary font-bold py-3 px-8 rounded-full text-lg inline-block hover:shadow-lg transform hover:scale-105">
+                    出席票のエリアを印刷する (試作)
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8 text-center">
+        <p>&copy; 令和7年 大山地区子ども会育成会連絡協議会</p>
+        <p class="text-sm mt-1">会長 金子泰士</p>
+        <p class="text-xs mt-2">このページは「ふれあい七夕まつり」の案内を目的として作成されました。</p>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIconOpen = document.getElementById('menu-icon-open');
+        const menuIconClose = document.getElementById('menu-icon-close');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            menuIconOpen.classList.toggle('hidden');
+            menuIconClose.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when a link is clicked
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+                menuIconOpen.classList.remove('hidden');
+                menuIconClose.classList.add('hidden');
+            });
+        });
+        
+        // Special event card interaction
+        const specialEventCard = document.getElementById('special-event-card');
+        const specialEventReveal = document.getElementById('special-event-reveal');
+        if (specialEventCard && specialEventReveal) {
+            specialEventCard.addEventListener('click', () => {
+                specialEventReveal.style.opacity = specialEventReveal.style.opacity === '1' ? '0' : '1';
+            });
+        }
+
+        // Smooth scroll for anchor links & active nav link highlighting
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= (sectionTop - sectionHeight / 3 - 70)) { // Adjusted offset for sticky header
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('nav-link-active');
+                if (link.getAttribute('href').substring(1) === current) {
+                    link.classList.add('nav-link-active');
+                }
+            });
+            // Ensure "home" is active when at the top
+            if (pageYOffset < sections[0].offsetTop - 70) {
+                 navLinks.forEach(link => link.classList.remove('nav-link-active'));
+                 document.querySelector('a[href="#hero"].nav-link').classList.add('nav-link-active');
+            }
+        });
+        
+        // Initialize active link on page load
+        function initActiveLink() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                 if (pageYOffset >= (sectionTop - 70)) {
+                    current = section.getAttribute('id');
+                }
+            });
+             if (!current && sections.length > 0) current = sections[0].getAttribute('id');
+
+
+            navLinks.forEach(link => {
+                link.classList.remove('nav-link-active');
+                if (link.getAttribute('href').substring(1) === current) {
+                    link.classList.add('nav-link-active');
+                }
+            });
+        }
+        initActiveLink();
+
+
+        // Decorative stars in hero section
+        const starsContainer = document.getElementById('stars-container');
+        if (starsContainer) {
+            for (let i = 0; i < 30; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.textContent = '✨'; // Using emoji as star
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * 3}s`;
+                star.style.animationDuration = `${2 + Math.random() * 3}s`;
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Print attendance slip function (basic implementation)
+        function printAttendanceSlip() {
+            const slipContent = document.querySelector('#signup .border-2.border-dashed').innerHTML;
+            const printWindow = window.open('', '_blank', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>七夕まつり出席票</title>');
+            printWindow.document.write('<style>body{font-family: sans-serif;} .font-mochiy{font-weight:bold;} .text-left{text-align:left;} .space-y-3 > *+*{margin-top:0.75rem;} .space-y-1 > *+*{margin-top:0.25rem;} .text-orange-700{color:orange;} .text-gray-700{color:gray;} p{margin:0.5em 0;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(slipContent);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+    </script>
+</body>
+</html>
